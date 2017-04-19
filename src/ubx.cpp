@@ -102,9 +102,9 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 	_configured = false;
 	_output_mode = output_mode;
 	/* try different baudrates */
-	const unsigned baudrates[] = {9600, 38400, 19200, 57600, 115200, 230400};
+//	const unsigned baudrates[] = {9600, 38400, 19200, 57600, 115200, 230400};
 
-	unsigned baud_i;
+//	unsigned baud_i;
 	ubx_payload_tx_cfg_prt_t cfg_prt[2];
 	uint16_t out_proto_mask = output_mode == OutputMode::GPS ?
 				  UBX_TX_CFG_PRT_OUTPROTOMASK_GPS :
@@ -120,70 +120,77 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 
 
 	if (_interface == Interface::UART) {
-		for (baud_i = 0; baud_i < sizeof(baudrates) / sizeof(baudrates[0]); baud_i++) {
-			baudrate = baudrates[baud_i];
-			setBaudrate(baudrate);
+		setBaudrate(UBX_TX_CFG_PRT_BAUDRATE);
+		decodeInit();
+		receive(20);
+		decodeInit();
+		waitForAck(UBX_MSG_CFG_PRT, UBX_CONFIG_TIMEOUT, false);
 
-			/* flush input and wait for at least 20 ms silence */
-			decodeInit();
-			receive(20);
-			decodeInit();
 
-			/* Send a CFG-PRT message to set the UBX protocol for in and out
-			 * and leave the baudrate as it is, we just want an ACK-ACK for this */
-			memset(cfg_prt, 0, 2 * sizeof(ubx_payload_tx_cfg_prt_t));
-			cfg_prt[0].portID		= UBX_TX_CFG_PRT_PORTID;
-			cfg_prt[0].mode		= UBX_TX_CFG_PRT_MODE;
-			cfg_prt[0].baudRate	= baudrate;
-			cfg_prt[0].inProtoMask	= in_proto_mask;
-			cfg_prt[0].outProtoMask	= out_proto_mask;
-			cfg_prt[1].portID		= UBX_TX_CFG_PRT_PORTID_USB;
-			cfg_prt[1].mode		= UBX_TX_CFG_PRT_MODE;
-			cfg_prt[1].baudRate	= baudrate;
-			cfg_prt[1].inProtoMask	= in_proto_mask;
-			cfg_prt[1].outProtoMask	= out_proto_mask;
-
-			if (!sendMessage(UBX_MSG_CFG_PRT, (uint8_t *)cfg_prt, 2 * sizeof(ubx_payload_tx_cfg_prt_t))) {
-				continue;
-			}
-
-			if (waitForAck(UBX_MSG_CFG_PRT, UBX_CONFIG_TIMEOUT, false) < 0) {
-				/* try next baudrate */
-				continue;
-			}
-
-			/* Send a CFG-PRT message again, this time change the baudrate */
-			memset(cfg_prt, 0, 2 * sizeof(ubx_payload_tx_cfg_prt_t));
-			cfg_prt[0].portID		= UBX_TX_CFG_PRT_PORTID;
-			cfg_prt[0].mode		= UBX_TX_CFG_PRT_MODE;
-			cfg_prt[0].baudRate	= UBX_TX_CFG_PRT_BAUDRATE;
-			cfg_prt[0].inProtoMask	= in_proto_mask;
-			cfg_prt[0].outProtoMask	= out_proto_mask;
-			cfg_prt[1].portID		= UBX_TX_CFG_PRT_PORTID_USB;
-			cfg_prt[1].mode		= UBX_TX_CFG_PRT_MODE;
-			cfg_prt[1].baudRate	= UBX_TX_CFG_PRT_BAUDRATE;
-			cfg_prt[1].inProtoMask	= in_proto_mask;
-			cfg_prt[1].outProtoMask	= out_proto_mask;
-
-			if (!sendMessage(UBX_MSG_CFG_PRT, (uint8_t *)cfg_prt, 2 * sizeof(ubx_payload_tx_cfg_prt_t))) {
-				continue;
-			}
-
-			/* no ACK is expected here, but read the buffer anyway in case we actually get an ACK */
-			waitForAck(UBX_MSG_CFG_PRT, UBX_CONFIG_TIMEOUT, false);
-
-			if (UBX_TX_CFG_PRT_BAUDRATE != baudrate) {
-				setBaudrate(UBX_TX_CFG_PRT_BAUDRATE);
-				baudrate = UBX_TX_CFG_PRT_BAUDRATE;
-			}
+//		for (baud_i = 0; baud_i < sizeof(baudrates) / sizeof(baudrates[0]); baud_i++) {
+//			baudrate = baudrates[baud_i];
+//			setBaudrate(baudrate);
+//
+//			/* flush input and wait for at least 20 ms silence */
+//			decodeInit();
+//			receive(20);
+//			decodeInit();
+//
+//			/* Send a CFG-PRT message to set the UBX protocol for in and out
+//			 * and leave the baudrate as it is, we just want an ACK-ACK for this */
+//			memset(cfg_prt, 0, 2 * sizeof(ubx_payload_tx_cfg_prt_t));
+//			cfg_prt[0].portID		= UBX_TX_CFG_PRT_PORTID;
+//			cfg_prt[0].mode		= UBX_TX_CFG_PRT_MODE;
+//			cfg_prt[0].baudRate	= baudrate;
+//			cfg_prt[0].inProtoMask	= in_proto_mask;
+//			cfg_prt[0].outProtoMask	= out_proto_mask;
+//			cfg_prt[1].portID		= UBX_TX_CFG_PRT_PORTID_USB;
+//			cfg_prt[1].mode		= UBX_TX_CFG_PRT_MODE;
+//			cfg_prt[1].baudRate	= baudrate;
+//			cfg_prt[1].inProtoMask	= in_proto_mask;
+//			cfg_prt[1].outProtoMask	= out_proto_mask;
+//
+//			if (!sendMessage(UBX_MSG_CFG_PRT, (uint8_t *)cfg_prt, 2 * sizeof(ubx_payload_tx_cfg_prt_t))) {
+//				continue;
+//			}
+//
+//			if (waitForAck(UBX_MSG_CFG_PRT, UBX_CONFIG_TIMEOUT, false) < 0) {
+//				/* try next baudrate */
+//				continue;
+//			}
+//
+//			/* Send a CFG-PRT message again, this time change the baudrate */
+//			memset(cfg_prt, 0, 2 * sizeof(ubx_payload_tx_cfg_prt_t));
+//			cfg_prt[0].portID		= UBX_TX_CFG_PRT_PORTID;
+//			cfg_prt[0].mode		= UBX_TX_CFG_PRT_MODE;
+//			cfg_prt[0].baudRate	= UBX_TX_CFG_PRT_BAUDRATE;
+//			cfg_prt[0].inProtoMask	= in_proto_mask;
+//			cfg_prt[0].outProtoMask	= out_proto_mask;
+//			cfg_prt[1].portID		= UBX_TX_CFG_PRT_PORTID_USB;
+//			cfg_prt[1].mode		= UBX_TX_CFG_PRT_MODE;
+//			cfg_prt[1].baudRate	= UBX_TX_CFG_PRT_BAUDRATE;
+//			cfg_prt[1].inProtoMask	= in_proto_mask;
+//			cfg_prt[1].outProtoMask	= out_proto_mask;
+//
+//			if (!sendMessage(UBX_MSG_CFG_PRT, (uint8_t *)cfg_prt, 2 * sizeof(ubx_payload_tx_cfg_prt_t))) {
+//				continue;
+//			}
+//
+//			/* no ACK is expected here, but read the buffer anyway in case we actually get an ACK */
+//			waitForAck(UBX_MSG_CFG_PRT, UBX_CONFIG_TIMEOUT, false);
+//
+//			if (UBX_TX_CFG_PRT_BAUDRATE != baudrate) {
+//				setBaudrate(UBX_TX_CFG_PRT_BAUDRATE);
+//				baudrate = UBX_TX_CFG_PRT_BAUDRATE;
+//			}
 
 			/* at this point we have correct baudrate on both ends */
-			break;
-		}
+//			break;
+//		}
 
-		if (baud_i >= sizeof(baudrates) / sizeof(baudrates[0])) {
-			return -1;	// connection and/or baudrate detection failed
-		}
+//		if (baud_i >= sizeof(baudrates) / sizeof(baudrates[0])) {
+//			return -1;	// connection and/or baudrate detection failed
+//		}
 
 	} else if (_interface == Interface::SPI) {
 		memset(cfg_prt, 0, 2 * sizeof(ubx_payload_tx_cfg_prt_t));
@@ -203,35 +210,35 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 		return -1;
 	}
 
-	/* Send a CFG-RATE message to define update rate */
-	memset(&_buf.payload_tx_cfg_rate, 0, sizeof(_buf.payload_tx_cfg_rate));
-	_buf.payload_tx_cfg_rate.measRate	= UBX_TX_CFG_RATE_MEASINTERVAL;
-	_buf.payload_tx_cfg_rate.navRate	= UBX_TX_CFG_RATE_NAVRATE;
-	_buf.payload_tx_cfg_rate.timeRef	= UBX_TX_CFG_RATE_TIMEREF;
-
-	if (!sendMessage(UBX_MSG_CFG_RATE, (uint8_t *)&_buf, sizeof(_buf.payload_tx_cfg_rate))) {
-		return -1;
-	}
-
-	if (waitForAck(UBX_MSG_CFG_RATE, UBX_CONFIG_TIMEOUT, true) < 0) {
-		return -1;
-	}
-
-	/* send a NAV5 message to set the options for the internal filter */
-	memset(&_buf.payload_tx_cfg_nav5, 0, sizeof(_buf.payload_tx_cfg_nav5));
-	_buf.payload_tx_cfg_nav5.mask		= UBX_TX_CFG_NAV5_MASK;
-	_buf.payload_tx_cfg_nav5.dynModel	= output_mode == OutputMode::GPS ?
-			UBX_TX_CFG_NAV5_DYNMODEL :
-			UBX_TX_CFG_NAV5_DYNMODEL_RTCM;
-	_buf.payload_tx_cfg_nav5.fixMode	= UBX_TX_CFG_NAV5_FIXMODE;
-
-	if (!sendMessage(UBX_MSG_CFG_NAV5, (uint8_t *)&_buf, sizeof(_buf.payload_tx_cfg_nav5))) {
-		return -1;
-	}
-
-	if (waitForAck(UBX_MSG_CFG_NAV5, UBX_CONFIG_TIMEOUT, true) < 0) {
-		return -1;
-	}
+//	/* Send a CFG-RATE message to define update rate */
+//	memset(&_buf.payload_tx_cfg_rate, 0, sizeof(_buf.payload_tx_cfg_rate));
+//	_buf.payload_tx_cfg_rate.measRate	= UBX_TX_CFG_RATE_MEASINTERVAL;
+//	_buf.payload_tx_cfg_rate.navRate	= UBX_TX_CFG_RATE_NAVRATE;
+//	_buf.payload_tx_cfg_rate.timeRef	= UBX_TX_CFG_RATE_TIMEREF;
+//
+//	if (!sendMessage(UBX_MSG_CFG_RATE, (uint8_t *)&_buf, sizeof(_buf.payload_tx_cfg_rate))) {
+//		return -1;
+//	}
+//
+//	if (waitForAck(UBX_MSG_CFG_RATE, UBX_CONFIG_TIMEOUT, true) < 0) {
+//		return -1;
+//	}
+//
+//	/* send a NAV5 message to set the options for the internal filter */
+//	memset(&_buf.payload_tx_cfg_nav5, 0, sizeof(_buf.payload_tx_cfg_nav5));
+//	_buf.payload_tx_cfg_nav5.mask		= UBX_TX_CFG_NAV5_MASK;
+//	_buf.payload_tx_cfg_nav5.dynModel	= output_mode == OutputMode::GPS ?
+//			UBX_TX_CFG_NAV5_DYNMODEL :
+//			UBX_TX_CFG_NAV5_DYNMODEL_RTCM;
+//	_buf.payload_tx_cfg_nav5.fixMode	= UBX_TX_CFG_NAV5_FIXMODE;
+//
+//	if (!sendMessage(UBX_MSG_CFG_NAV5, (uint8_t *)&_buf, sizeof(_buf.payload_tx_cfg_nav5))) {
+//		return -1;
+//	}
+//
+//	if (waitForAck(UBX_MSG_CFG_NAV5, UBX_CONFIG_TIMEOUT, true) < 0) {
+//		return -1;
+//	}
 
 #ifdef UBX_CONFIGURE_SBAS
 	/* send a SBAS message to set the SBAS options */
@@ -253,59 +260,61 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 
 	/* try to set rate for NAV-PVT */
 	/* (implemented for ubx7+ modules only, use NAV-SOL, NAV-POSLLH, NAV-VELNED and NAV-TIMEUTC for ubx6) */
-	if (!configureMessageRate(UBX_MSG_NAV_PVT, 1)) {
-		return -1;
-	}
+//	if (!configureMessageRate(UBX_MSG_NAV_PVT, 1)) {
+//		return -1;
+//	}
 
-	if (waitForAck(UBX_MSG_CFG_MSG, UBX_CONFIG_TIMEOUT, true) < 0) {
-		_use_nav_pvt = false;
+	_use_nav_pvt = true;
 
-	} else {
-		_use_nav_pvt = true;
-	}
+//	if (waitForAck(UBX_MSG_CFG_MSG, UBX_CONFIG_TIMEOUT, true) < 0) {
+//		_use_nav_pvt = false;
+//
+//	} else {
+//		_use_nav_pvt = true;
+//	}
 
 	UBX_DEBUG("%susing NAV-PVT", _use_nav_pvt ? "" : "not ");
 
-	if (!_use_nav_pvt) {
-		if (!configureMessageRateAndAck(UBX_MSG_NAV_TIMEUTC, 5, true)) {
-			return -1;
-		}
+//	if (!_use_nav_pvt) {
+//		if (!configureMessageRateAndAck(UBX_MSG_NAV_TIMEUTC, 5, true)) {
+//			return -1;
+//		}
+//
+//		if (!configureMessageRateAndAck(UBX_MSG_NAV_POSLLH, 1, true)) {
+//			return -1;
+//		}
+//
+//		if (!configureMessageRateAndAck(UBX_MSG_NAV_SOL, 1, true)) {
+//			return -1;
+//		}
+//
+//		if (!configureMessageRateAndAck(UBX_MSG_NAV_VELNED, 1, true)) {
+//			return -1;
+//		}
+//	}
 
-		if (!configureMessageRateAndAck(UBX_MSG_NAV_POSLLH, 1, true)) {
-			return -1;
-		}
+//	if (!configureMessageRateAndAck(UBX_MSG_NAV_DOP, 1, true)) {
+//		return -1;
+//	}
+//
+//	if (!configureMessageRateAndAck(UBX_MSG_NAV_SVINFO, (_satellite_info != nullptr) ? 5 : 0, true)) {
+//		return -1;
+//	}
+//
+//	if (!configureMessageRateAndAck(UBX_MSG_MON_HW, 1, true)) {
+//		return -1;
+//	}
+//
+//	/* request module version information by sending an empty MON-VER message */
+//	if (!sendMessage(UBX_MSG_MON_VER, nullptr, 0)) {
+//		return -1;
+//	}
 
-		if (!configureMessageRateAndAck(UBX_MSG_NAV_SOL, 1, true)) {
-			return -1;
-		}
-
-		if (!configureMessageRateAndAck(UBX_MSG_NAV_VELNED, 1, true)) {
-			return -1;
-		}
-	}
-
-	if (!configureMessageRateAndAck(UBX_MSG_NAV_DOP, 1, true)) {
-		return -1;
-	}
-
-	if (!configureMessageRateAndAck(UBX_MSG_NAV_SVINFO, (_satellite_info != nullptr) ? 5 : 0, true)) {
-		return -1;
-	}
-
-	if (!configureMessageRateAndAck(UBX_MSG_MON_HW, 1, true)) {
-		return -1;
-	}
-
-	/* request module version information by sending an empty MON-VER message */
-	if (!sendMessage(UBX_MSG_MON_VER, nullptr, 0)) {
-		return -1;
-	}
-
-	if (output_mode == OutputMode::RTCM) {
-		if (restartSurveyIn() < 0) {
-			return -1;
-		}
-	}
+//	if (output_mode == OutputMode::RTCM) {
+//		if (restartSurveyIn() < 0) {
+//			return -1;
+//		}
+//	}
 
 	_configured = true;
 	return 0;
